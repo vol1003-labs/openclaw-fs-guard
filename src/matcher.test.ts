@@ -75,6 +75,21 @@ describe("compileDenyMatcher — normalization", () => {
     expectDeny("foo/../.ssh/id_ed25519", "**/id_ed25519*");
   });
 
+  it("collapses leading-slash runs", () => {
+    expectDeny("//proc/1/environ", "/proc/**");
+    // path chosen without "serviceaccount" so /var/run/secrets/** (index 11) fires first
+    expectDeny("///var/run/secrets/kubernetes.io/token", "/var/run/secrets/**");
+  });
+
+  it("returns exact normalized path in deny result", () => {
+    // **/.ssh/** (index 13) is the first pattern matching .ssh/known_hosts
+    expect(matcher.match("foo/../.ssh/known_hosts")).toEqual({
+      kind: "deny",
+      path: ".ssh/known_hosts",
+      pattern: "**/.ssh/**",
+    });
+  });
+
   it("converts backslashes to forward slashes", () => {
     expectDeny("secrets\\.env", "**/.env*");
     // **/id_rsa* (index 3) is checked before **/.ssh/** (index 13)
@@ -101,9 +116,21 @@ describe("compileDenyMatcher — unresolvable input", () => {
     expect(matcher.match("/work/.e\0nv").kind).toBe("unresolvable");
   });
 
+  it("flags paths with surrounding whitespace", () => {
+    expect(matcher.match(" /work/.env").kind).toBe("unresolvable");
+    expect(matcher.match("/work/.env ").kind).toBe("unresolvable");
+  });
+
   it("flags non-string input", () => {
     expect(matcher.match(42).kind).toBe("unresolvable");
     expect(matcher.match(undefined).kind).toBe("unresolvable");
     expect(matcher.match({ path: "/x" }).kind).toBe("unresolvable");
+  });
+});
+
+describe("compileDenyMatcher — empty pattern list", () => {
+  it("returns clean when no patterns are configured", () => {
+    // src/config.ts forbids empty pattern lists upstream; this tests the matcher's own behaviour in isolation
+    expect(compileDenyMatcher([]).match("/work/.env")).toEqual({ kind: "clean" });
   });
 });

@@ -19,10 +19,17 @@ export function compileDenyMatcher(patterns: readonly string[]): DenyMatcher {
   }));
   return {
     match(rawPath: unknown): MatchResult {
-      if (typeof rawPath !== "string" || rawPath.trim() === "" || rawPath.includes("\0")) {
+      if (
+        typeof rawPath !== "string" ||
+        rawPath.trim() === "" ||
+        rawPath !== rawPath.trim() ||
+        rawPath.includes("\0")
+      ) {
         return { kind: "unresolvable", path: String(rawPath) };
       }
-      const normalized = path.posix.normalize(rawPath.replaceAll("\\", "/"));
+      const normalized = path.posix
+        .normalize(rawPath.replaceAll("\\", "/"))
+        .replace(/^\/{2,}/, "/");
       for (const { pattern, isMatch } of compiled) {
         if (isMatch(normalized)) {
           return { kind: "deny", path: normalized, pattern };
