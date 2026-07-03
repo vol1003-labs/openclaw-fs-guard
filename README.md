@@ -20,7 +20,11 @@ touch, never file contents. Use it as one layer in a defense-in-depth setup.
   segments are resolved lexically, and matching is case-insensitive
   (`.ENV` is treated like `.env`). Patterns are matched with
   [picomatch](https://github.com/micromatch/picomatch) using
-  `{ dot: true, nocase: true }`.
+  `{ dot: true, nocase: true }`. Paths with leading/trailing whitespace
+  are treated as unresolvable and blocked (fail-closed). Runs of leading
+  slashes are collapsed to a single slash before matching. Relative paths
+  that escape upward after normalization (a leading `..` segment) are
+  blocked (fail-closed).
 - Any tool call carrying host-derived path hints (`derivedPaths`) is also
   evaluated, even if it is not one of the four fs tools.
 - Tools and paths that are not denied receive **no decision** — the plugin

@@ -128,6 +128,19 @@ describe("compileDenyMatcher — unresolvable input", () => {
   });
 });
 
+describe("compileDenyMatcher — upward-escaping paths", () => {
+  it("flags paths that escape upward after normalization", () => {
+    expect(matcher.match("../.ssh/id_rsa").kind).toBe("unresolvable");
+    expect(matcher.match("foo/../../u/.ssh/id_rsa").kind).toBe("unresolvable");
+    expect(matcher.match("..").kind).toBe("unresolvable");
+  });
+
+  it("still denies in-tree traversal that resolves within cwd", () => {
+    expectDeny("./x/.env", "**/.env*");
+    expect(matcher.match("a/../b.txt")).toEqual({ kind: "clean" });
+  });
+});
+
 describe("compileDenyMatcher — empty pattern list", () => {
   it("returns clean when no patterns are configured", () => {
     // src/config.ts forbids empty pattern lists upstream; this tests the matcher's own behaviour in isolation

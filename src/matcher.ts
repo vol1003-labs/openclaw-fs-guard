@@ -30,6 +30,9 @@ export function compileDenyMatcher(patterns: readonly string[]): DenyMatcher {
       const normalized = path.posix
         .normalize(rawPath.replaceAll("\\", "/"))
         .replace(/^\/{2,}/, "/");
+      if (normalized === ".." || normalized.startsWith("../")) {
+        return { kind: "unresolvable", path: normalized };
+      }
       for (const { pattern, isMatch } of compiled) {
         if (isMatch(normalized)) {
           return { kind: "deny", path: normalized, pattern };
