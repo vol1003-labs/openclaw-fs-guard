@@ -26,15 +26,7 @@ jobs:
           node-version: 20
           cache: npm
 
-      - name: Cache node_modules
-        id: node-modules
-        uses: actions/cache@v6
-        with:
-          path: node_modules
-          key: node-modules-${{ runner.os }}-node20-${{ hashFiles('package-lock.json') }}
-
       - name: Install dependencies
-        if: steps.node-modules.outputs.cache-hit != 'true'
         run: npm ci
 
       - name: Static checks (Biome)
@@ -70,17 +62,21 @@ jobs:
           fi
 
       - name: Verify package.json version matches tag
+        env:
+          EXPECTED_VERSION: ${{ steps.version.outputs.version }}
         run: |
           pkg_version="$(node -p "require('./package.json').version")"
-          expected="${{ steps.version.outputs.version }}"
+          expected="$EXPECTED_VERSION"
           if [[ "$pkg_version" != "$expected" ]]; then
             echo "::error::package.json version ($pkg_version) does not match tag version ($expected)"
             exit 1
           fi
 
       - name: Extract release notes from CHANGELOG
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
         run: |
-          version="${{ steps.version.outputs.version }}"
+          version="$RELEASE_VERSION"
           awk -v ver="$version" '
             $0 ~ "^## \\[" ver "\\]" { flag = 1; next }
             flag && /^## / { exit }
@@ -97,12 +93,15 @@ jobs:
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+          RELEASE_PRERELEASE: ${{ steps.version.outputs.prerelease }}
+          PACK_FILE: ${{ steps.pack.outputs.file }}
         run: |
-          tag="${{ steps.version.outputs.tag }}"
+          tag="$RELEASE_TAG"
           args=(--title "$tag" --notes-file release-notes.md --verify-tag)
-          if [[ "${{ steps.version.outputs.prerelease }}" == "true" ]]; then
+          if [[ "$RELEASE_PRERELEASE" == "true" ]]; then
             args+=(--prerelease)
           else
             args+=(--latest)
           fi
-          gh release create "$tag" "${{ steps.pack.outputs.file }}" "${args[@]}"
+          gh release create "$tag" "$PACK_FILE" "${args[@]}"
