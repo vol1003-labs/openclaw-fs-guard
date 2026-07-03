@@ -1,0 +1,66 @@
+{
+  "name": "openclaw-fs-guard",
+  "version": "0.1.0",
+  "description": "OpenClaw trusted tool policy that denies filesystem tool calls targeting paths matching configured deny glob patterns.",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vol1003-labs/openclaw-fs-guard"
+  },
+  "files": [
+    "dist",
+    "openclaw.plugin.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "biome lint .",
+    "format": "biome format --write .",
+    "check": "biome check .",
+    "check:fix": "biome check --write .",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "prepack": "npm run build"
+  },
+  "dependencies": {
+    "picomatch": "^4.0.2"
+  },
+  "peerDependencies": {
+    "openclaw": ">=2026.6.10"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.1",
+    "@types/node": "^26.0.1",
+    "@types/picomatch": "^4.0.2",
+    "@vitest/coverage-v8": "^4.1.9",
+    "openclaw": "2026.6.10",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "openclaw": {
+    "extensions": [
+      "./index.ts"
+    ],
+    "runtimeExtensions": [
+      "./dist/index.js"
+    ],
+    "install": {
+      "npmSpec": "openclaw-fs-guard",
+      "defaultChoice": "npm",
+      "minHostVersion": ">=2026.6.10"
+    },
+    "compat": {
+      "pluginApi": ">=2026.6.10"
+    },
+    "build": {
+      "openclawVersion": "2026.6.10",
+      "bundledDist": false
+    }
+  }
+}

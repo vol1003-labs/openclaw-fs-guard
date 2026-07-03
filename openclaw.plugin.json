@@ -1,0 +1,19 @@
+{
+  "id": "fs-guard",
+  "name": "FS Guard",
+  "description": "Denies filesystem tool calls targeting paths that match configured deny glob patterns.",
+  "activation": { "onStartup": true },
+  "contracts": { "trustedToolPolicies": ["fs-guard-path-deny"] },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["denyPatterns"],
+    "properties": {
+      "denyPatterns": {
+        "type": "array",
+        "minItems": 1,
+        "items": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}
