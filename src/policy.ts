@@ -32,7 +32,8 @@ export function createFsGuardPolicy(matcher: DenyMatcher): PluginTrustedToolPoli
 }
 
 function evaluateEvent(event: ToolCallEvent, matcher: DenyMatcher) {
-  const guarded = FS_TOOL_NAMES.has(event.toolName) || event.derivedPaths !== undefined;
+  const guarded =
+    FS_TOOL_NAMES.has(event.toolName.toLowerCase()) || event.derivedPaths !== undefined;
   if (!guarded) {
     return undefined;
   }

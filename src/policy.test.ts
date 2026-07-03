@@ -60,6 +60,20 @@ describe("guarded fs tools", () => {
   });
 });
 
+describe("toolName casing", () => {
+  it("blocks READ (uppercase) targeting a denied path", () => {
+    const decision = evaluate({ toolName: "READ", params: { path: "/work/.env" } });
+    expect(decision).toEqual({
+      block: true,
+      blockReason: "fs-guard: /work/.env matches deny pattern **/.env*",
+    });
+  });
+
+  it("passes Read (title-case) targeting a clean path", () => {
+    expect(evaluate({ toolName: "Read", params: { path: "/work/src/app.ts" } })).toBeUndefined();
+  });
+});
+
 describe("non-fs tools", () => {
   it("returns no decision for unrelated tools", () => {
     expect(evaluate({ toolName: "exec", params: { command: "cat /work/.env" } })).toBeUndefined();
@@ -95,6 +109,24 @@ describe("fail-closed", () => {
 
   it("blocks write with empty-string path", () => {
     expect(evaluate({ toolName: "write", params: { path: "" } })).toEqual(FAIL_CLOSED);
+  });
+
+  it("blocks read with array path (non-string candidate → unresolvable)", () => {
+    expect(evaluate({ toolName: "read", params: { path: ["/ok.txt", "/work/.env"] } })).toEqual(
+      FAIL_CLOSED,
+    );
+  });
+
+  it("blocks read when params key is missing (catch branch)", () => {
+    const decision = evaluate({ toolName: "read" });
+    expect((decision as any).block).toBe(true);
+    expect((decision as any).blockReason).toContain("fail-closed");
+  });
+
+  it("blocks unknown tool with empty derivedPaths (no candidates)", () => {
+    expect(evaluate({ toolName: "future_tool", params: {}, derivedPaths: [] })).toEqual(
+      FAIL_CLOSED,
+    );
   });
 
   it("blocks when the matcher throws", () => {
